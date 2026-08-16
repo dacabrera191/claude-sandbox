@@ -1,0 +1,37 @@
+name: claude-sandbox
+
+services:
+  claude-proxy:
+    build: ./proxy
+    image: claude-proxy
+    container_name: claude-proxy
+    restart: unless-stopped
+    networks: [claude-egress, claude-internal]
+
+  sbx:
+    build: ./sandbox
+    image: claude-sandbox
+    depends_on: [claude-proxy]
+    networks: [claude-internal]
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: "${CLAUDE_CODE_OAUTH_TOKEN:?not set - source ~/.bashrc first}"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 4g
+    pids_limit: 512
+    stdin_open: true
+    tty: true
+    volumes:
+      - "claude-home:/home/dev"
+      - "${PROJECT_DIR:?set PROJECT_DIR in .env}:/work"
+
+volumes:
+  claude-home:
+    name: claude-home
+
+networks:
+  claude-egress:
+    name: claude-egress
+  claude-internal:
+    name: claude-internal
+    internal: true
