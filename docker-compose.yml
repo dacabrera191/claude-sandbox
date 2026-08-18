@@ -1,5 +1,4 @@
 name: claude-sandbox
-
 services:
   claude-proxy:
     build: ./proxy
@@ -9,14 +8,13 @@ services:
     networks: [claude-egress, claude-internal]
     volumes:
       - "./proxy/squid.conf:/etc/squid/squid.conf:ro"
-
   sbx:
     build: ./sandbox
     image: claude-sandbox
     depends_on: [claude-proxy]
     networks: [claude-internal]
-    environment:
-      CLAUDE_CODE_OAUTH_TOKEN: "${CLAUDE_CODE_OAUTH_TOKEN:?not set - source ~/.bashrc first}"
+    env_file:
+      - ./secrets/claude.env
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     mem_limit: 4g
@@ -26,11 +24,9 @@ services:
     volumes:
       - "claude-home:/home/dev"
       - "${PROJECT_DIR:?set PROJECT_DIR in .env}:/work"
-
 volumes:
   claude-home:
     name: claude-home
-
 networks:
   claude-egress:
     name: claude-egress
